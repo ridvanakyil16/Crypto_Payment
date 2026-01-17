@@ -10,4 +10,8 @@ public class Invoice
     public string Email { get; set; }
     public string OrderName { get; set; }        // usdt
     public string CallbackUrl { get; set; }      // http://...
+    
+    // Müşteri ilişkisi
+    public int? CustomerId { get; set; }
+    public Customer? Customer { get; set; }
 }
