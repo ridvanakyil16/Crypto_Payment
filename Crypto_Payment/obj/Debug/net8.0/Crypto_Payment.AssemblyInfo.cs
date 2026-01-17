@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Crypto_Payment")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+23fea9293ad9edebe2274e9f102f01e9533d28d9")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8bcff177afc1153655f029c88506ee4f1a7ae8ba")]
 [assembly: System.Reflection.AssemblyProductAttribute("Crypto_Payment")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Crypto_Payment")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
