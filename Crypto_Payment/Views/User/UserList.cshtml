@@ -1,0 +1,171 @@
+@{
+    ViewBag.Title = "Kullanıcı Listesi";
+    Layout = "_Layout";
+}
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card" id="invoiceList">
+            <div class="card-header border-0">
+                <div class="d-flex align-items-center">
+                    <h5 class="card-title mb-0 flex-grow-1">Kullanıcılar</h5>
+                    <div class="flex-shrink-0">
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button class="btn btn-primary" id="remove-actions" onClick="deleteMultiple()"><i class="ri-delete-bin-2-line"></i></button>
+                            <a href="/invoices/invoice-add" class="btn btn-danger"><i class="ri-add-line align-bottom me-1"></i> Kullanıcı Oluştur</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body bg-light-subtle border border-dashed border-start-0 border-end-0">
+                <form>
+                    <div class="row g-3">
+                        <div class="col-xxl-5 col-sm-12">
+                            <div class="search-box">
+                                <input type="text" class="form-control search bg-light border-light" placeholder="Fatura Ara...">
+                                <i class="ri-search-line search-icon"></i>
+                            </div>
+                        </div>
+                        <!--end col-->
+                        <div class="col-xxl-3 col-sm-4">
+                            <input type="text" class="form-control bg-light border-light" id="datepicker-range" placeholder="Tarih Seç">
+                        </div>
+                        <!--end col-->
+                        <div class="col-xxl-3 col-sm-4">
+                            <div class="input-light">
+                                <select class="form-control" data-choices data-choices-search-false name="choices-single-default" id="idStatus">
+                                    <option value="">Durum</option>
+                                    <option value="all" selected>Tümü</option>
+                                    <option value="Unpaid">Ödenmemiş</option>
+                                    <option value="Paid">Ödenmiş</option>
+                                    <option value="Cancel">İptal Edilen</option>
+                                    <option value="Sent">Gönderilen</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!--end col-->
+
+                        <div class="col-xxl-1 col-sm-4">
+                            <button type="button" class="btn btn-primary w-100" onclick="SearchData();">
+                                <i class="ri-equalizer-fill me-1 align-bottom"></i> Filtreler
+                            </button>
+                        </div>
+                        <!--end col-->
+                    </div>
+                    <!--end row-->
+                </form>
+            </div>
+            <div class="card-body">
+                <div>
+                    <div class="table-responsive table-card">
+                        <table class="table align-middle table-nowrap" id="invoiceTable">
+                            <thead class="text-muted">
+                                <tr>
+                                    <th scope="col" style="width: 50px;">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="checkAll" value="option">
+                                        </div>
+                                    </th>
+                                    <th class="sort text-uppercase" data-sort="name_surname">Ad Soyad</th>
+                                    <th class="sort text-uppercase" data-sort="username">Kullanıcı Adı</th>
+                                    <th class="sort text-uppercase" data-sort="email">E-Posta</th>
+                                    <th class="sort text-uppercase" data-sort="phone">Telefon</th>
+                                    <th class="sort text-uppercase" data-sort="action">Eylemler</th>
+                                </tr>
+                            </thead>
+                            <tbody class="list form-check-all" id="userList">
+                                
+                            </tbody>
+                        </table>
+                        <div class="noresult" style="display: none">
+                            <div class="text-center">
+                                <lord-icon src="https://cdn.lordicon.com/msoeawqm.json" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
+                                <h5 class="mt-2">Üzgünüz! Sonuç Bulunamadı</h5>
+                                <p class="text-muted mb-0">Kullanıcı Bulunamadı</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end mt-3">
+                        <div class="pagination-wrap hstack gap-2">
+                            <a class="page-item pagination-prev disabled" href="#">
+                                Geri
+                            </a>
+                            <ul class="pagination listjs-pagination mb-0"></ul>
+                            <a class="page-item pagination-next" href="#">
+                                İleri
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal -->
+                <div class="modal fade flip" id="deleteOrder" tabindex="-1" aria-labelledby="deleteOrderLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-body p-5 text-center">
+                                <lord-icon src="https://cdn.lordicon.com/gsqxdxog.json" trigger="loop" colors="primary:#405189,secondary:#f06548" style="width:90px;height:90px"></lord-icon>
+                                <div class="mt-4 text-center">
+                                    <h4>Bu Kullanıcıyı Silmek istediğinizden emin misiniz?</h4>
+                                    <div class="hstack gap-2 justify-content-center remove">
+                                        <button class="btn btn-link link-success fw-medium text-decoration-none" id="deleteRecord-close" data-bs-dismiss="modal"><i class="ri-close-line me-1 align-middle"></i> Kapat</button>
+                                        <button class="btn btn-danger" id="delete-record">Evet</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--end modal -->
+            </div>
+        </div>
+    </div>
+    <!--end col-->
+</div>
+<!--end row-->
+
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const tbody = document.getElementById('userList');
+            if (!tbody) return;
+
+            const res = await fetch('/api/users/getall');
+            const list = await res.json();
+
+            tbody.innerHTML = '';
+
+            list.forEach(u => {
+            tbody.innerHTML += `
+                <tr data-id="${u.id}">
+                    <th scope="row">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox">
+                        </div>
+                    </th>
+                    <td class="name_surname">${u.fullName}</td>
+                    <td class="user_name">${u.userName}</td>
+                    <td class="email">${u.email}</td>
+                    <td class="phone_number">${u.phoneNumber}</td>
+                    <td class="status">
+                        <span class="badge ${u.isActive ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}">
+                            ${u.isActive ? 'Aktif' : 'Pasif'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="btn btn-soft-secondary btn-sm dropdown" type="button" data-bs-toggle="dropdown">
+                                <i class="ri-more-fill"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="/users/detail/${u.id}">Detay</a></li>
+                                <li><a class="dropdown-item" href="/users/edit/${u.id}">Güncelle</a></li>
+                                <li><a class="dropdown-item" href="/users/edit/${u.id}">Sil</a></li>
+                            </ul>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+        });
+    </script>
+}

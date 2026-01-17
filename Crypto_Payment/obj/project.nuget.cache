@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "D+6BysoGPsw=",
+  "dgSpecHash": "r1BnpB214Go=",
   "success": true,
   "projectFilePath": "/Users/ridvanakyil/RiderProjects/Solution1_Crypto/Crypto_Payment/Crypto_Payment.csproj",
   "expectedPackageFiles": [
@@ -40,6 +40,8 @@
     "/Users/ridvanakyil/.nuget/packages/microsoft.extensions.primitives/8.0.0/microsoft.extensions.primitives.8.0.0.nupkg.sha512",
     "/Users/ridvanakyil/.nuget/packages/microsoft.win32.systemevents/6.0.0/microsoft.win32.systemevents.6.0.0.nupkg.sha512",
     "/Users/ridvanakyil/.nuget/packages/mono.texttemplating/2.2.1/mono.texttemplating.2.2.1.nupkg.sha512",
+    "/Users/ridvanakyil/.nuget/packages/npgsql/10.0.1/npgsql.10.0.1.nupkg.sha512",
+    "/Users/ridvanakyil/.nuget/packages/npgsql.entityframeworkcore.postgresql/8.0.0/npgsql.entityframeworkcore.postgresql.8.0.0.nupkg.sha512",
     "/Users/ridvanakyil/.nuget/packages/qrcoder/1.7.0/qrcoder.1.7.0.nupkg.sha512",
     "/Users/ridvanakyil/.nuget/packages/sqlitepclraw.bundle_e_sqlite3/2.1.6/sqlitepclraw.bundle_e_sqlite3.2.1.6.nupkg.sha512",
     "/Users/ridvanakyil/.nuget/packages/sqlitepclraw.core/2.1.6/sqlitepclraw.core.2.1.6.nupkg.sha512",
@@ -53,6 +55,7 @@
     "/Users/ridvanakyil/.nuget/packages/system.composition.hosting/6.0.0/system.composition.hosting.6.0.0.nupkg.sha512",
     "/Users/ridvanakyil/.nuget/packages/system.composition.runtime/6.0.0/system.composition.runtime.6.0.0.nupkg.sha512",
     "/Users/ridvanakyil/.nuget/packages/system.composition.typedparts/6.0.0/system.composition.typedparts.6.0.0.nupkg.sha512",
+    "/Users/ridvanakyil/.nuget/packages/system.diagnostics.diagnosticsource/9.0.11/system.diagnostics.diagnosticsource.9.0.11.nupkg.sha512",
     "/Users/ridvanakyil/.nuget/packages/system.drawing.common/6.0.0/system.drawing.common.6.0.0.nupkg.sha512",
     "/Users/ridvanakyil/.nuget/packages/system.io.pipelines/6.0.3/system.io.pipelines.6.0.3.nupkg.sha512",
     "/Users/ridvanakyil/.nuget/packages/system.memory/4.5.3/system.memory.4.5.3.nupkg.sha512",

@@ -136,3 +136,7 @@
 /Users/ridvanakyil/RiderProjects/Solution1_Crypto/Crypto_Payment/bin/Debug/net8.0/runtimes/win/lib/net6.0/Microsoft.Win32.SystemEvents.dll
 /Users/ridvanakyil/RiderProjects/Solution1_Crypto/Crypto_Payment/bin/Debug/net8.0/runtimes/unix/lib/net6.0/System.Drawing.Common.dll
 /Users/ridvanakyil/RiderProjects/Solution1_Crypto/Crypto_Payment/bin/Debug/net8.0/runtimes/win/lib/net6.0/System.Drawing.Common.dll
+/Users/ridvanakyil/RiderProjects/Solution1_Crypto/Crypto_Payment/obj/Debug/net8.0/Crypto_Payment.sourcelink.json
+/Users/ridvanakyil/RiderProjects/Solution1_Crypto/Crypto_Payment/bin/Debug/net8.0/Npgsql.dll
+/Users/ridvanakyil/RiderProjects/Solution1_Crypto/Crypto_Payment/bin/Debug/net8.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll
+/Users/ridvanakyil/RiderProjects/Solution1_Crypto/Crypto_Payment/bin/Debug/net8.0/System.Diagnostics.DiagnosticSource.dll

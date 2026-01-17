@@ -64,6 +64,14 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvSW52b2ljZS9JbnZvaWNlTGlzdC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[/Users/ridvanakyil/RiderProjects/Solution1_Crypto/Crypto_Payment/Views/Role/RoleList.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvUm9sZS9Sb2xlTGlzdC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/ridvanakyil/RiderProjects/Solution1_Crypto/Crypto_Payment/Views/RoleClaim/RoleClaimList.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvUm9sZUNsYWltL1JvbGVDbGFpbUxpc3QuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [/Users/ridvanakyil/RiderProjects/Solution1_Crypto/Crypto_Payment/Views/Shared/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2hhcmVkL0Vycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
@@ -74,6 +82,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [/Users/ridvanakyil/RiderProjects/Solution1_Crypto/Crypto_Payment/Views/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2hhcmVkL19WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/ridvanakyil/RiderProjects/Solution1_Crypto/Crypto_Payment/Views/User/UserList.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvVXNlci9Vc2VyTGlzdC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/ridvanakyil/RiderProjects/Solution1_Crypto/Crypto_Payment/Views/_ViewImports.cshtml]

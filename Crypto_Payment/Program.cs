@@ -5,14 +5,44 @@ using Crypto_Payment.Models;
 using Crypto_Payment.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Npgsql;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews()
     .AddJsonOptions(o => o.JsonSerializerOptions.PropertyNameCaseInsensitive = true);;
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite("Data Source=invoice.db"));
+// Heroku Postgres: DATABASE_URL -> Npgsql connection string
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+
+if (!string.IsNullOrWhiteSpace(databaseUrl))
+{
+    var uri = new Uri(databaseUrl);
+    var userInfo = uri.UserInfo.Split(':', 2);
+
+    var csb = new NpgsqlConnectionStringBuilder
+    {
+        Host = uri.Host,
+        Port = uri.Port,
+        Username = userInfo[0],
+        Password = userInfo.Length > 1 ? userInfo[1] : "",
+        Database = uri.AbsolutePath.TrimStart('/'),
+
+        // Heroku Postgres için gerekli
+        SslMode = SslMode.Require,
+        TrustServerCertificate = true
+    };
+
+    builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(csb.ConnectionString));
+}
+else
+{
+    // Local: appsettings.json içindeki bağlantın (SqlServer / Local Pg vs.)
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseSqlite("Data Source=invoice.db"));
+}
+
 
 builder.Services
     .AddIdentity<User, IdentityRole>(options =>
@@ -27,20 +57,29 @@ builder.Services
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders(); // Email confirm + 2FA token providerlar
 
+builder.Services.AddHttpClient<IPlisioService, PlisioManager>();
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/api/auth/login";
     options.AccessDeniedPath = "/api/auth/denied";
 });
 
-
 builder.Services.Configure<SmtpSettings>(
     builder.Configuration.GetSection("Smtp"));
 
 builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<ICustomerService, CustomerManager>();
+builder.Services.AddScoped<IInvoiceService, InvoiceManager>();
+builder.Services.AddScoped<IRoleService, RoleManager>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
 
 if (!app.Environment.IsDevelopment())
 {
