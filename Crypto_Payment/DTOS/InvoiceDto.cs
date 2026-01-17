@@ -28,4 +28,6 @@ public class InvoiceDto
     [Required(ErrorMessage = "Callback URL zorunludur.")]
     public string CallbackUrl { get; set; }
 
+    // Müşteri seçimi
+    public int? CustomerId { get; set; }
 }

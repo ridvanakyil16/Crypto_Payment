@@ -26,7 +26,8 @@ public class InvoiceManager : IInvoiceService
             Currency = x.Currency,
             Email = x.Email,
             OrderName = x.OrderName,
-            CallbackUrl = x.CallbackUrl
+            CallbackUrl = x.CallbackUrl,
+            CustomerId = x.CustomerId
         }).ToListAsync();
     }
 
@@ -45,6 +46,7 @@ public class InvoiceManager : IInvoiceService
             Email = x.Email,
             OrderName = x.OrderName,
             CallbackUrl = x.CallbackUrl,
+            CustomerId = x.CustomerId
         };
     }
 
@@ -65,7 +67,8 @@ public class InvoiceManager : IInvoiceService
             Currency = dto.Currency,
             Email = dto.Email,
             OrderName = dto.OrderName,
-            CallbackUrl = dto.CallbackUrl
+            CallbackUrl = dto.CallbackUrl,
+            CustomerId = dto.CustomerId
         };
         
         _db.Invoices.Add(invoice);
@@ -87,6 +90,7 @@ public class InvoiceManager : IInvoiceService
         invoice.Email = dto.Email;
         invoice.OrderName = dto.OrderName;
         invoice.CallbackUrl = dto.CallbackUrl;
+        invoice.CustomerId = dto.CustomerId;
 
         await _db.SaveChangesAsync();
 

@@ -34,6 +34,15 @@
                             </div>
                             <!--end col-->
                             <div class="col-lg-3 col-sm-6">
+                                <label for="choices-customer">Müşteri</label>
+                                <div class="input-light">
+                                    <select class="form-control bg-light border-0" data-choices data-choices-search-true id="choices-customer" required>
+                                        <option value="">Müşteri Seçin</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!--end col-->
+                            <div class="col-lg-3 col-sm-6">
                                 <label for="choices-currency">Para Birimi</label>
                                 <div class="input-light">
                                     <select class="form-control bg-light border-0" data-choices data-choices-search-false id="choices-currency" required>
@@ -57,6 +66,9 @@
                                 </div>
                             </div>
                             <!--end col-->
+                        </div>
+                        <!--end row-->
+                        <div class="row g-3 mt-2">
                             <div class="col-lg-3 col-sm-6">
                                 <div>
                                     <label for="sourceAmount">Toplam Tutar</label>
@@ -197,3 +209,55 @@
     <!--end row-->
 
 </div>
+
+@section Scripts {
+<script>
+    // Sayfa yüklendiğinde müşterileri getir
+    document.addEventListener('DOMContentLoaded', function() {
+        loadCustomers();
+    });
+
+    // Müşterileri API'den yükle
+    async function loadCustomers() {
+        try {
+            const response = await fetch('/api/customers/GetAll');
+            if (response.ok) {
+                const customers = await response.json();
+                const select = document.getElementById('choices-customer');
+                
+                customers.forEach(customer => {
+                    const option = document.createElement('option');
+                    option.value = customer.id;
+                    option.textContent = `${customer.firstName} ${customer.lastName} - ${customer.companyName}`;
+                    select.appendChild(option);
+                });
+                
+                // Choices.js'i yeniden başlat (eğer kullanılıyorsa)
+                if (typeof Choices !== 'undefined') {
+                    new Choices(select, {
+                        searchEnabled: true,
+                        itemSelectText: '',
+                        placeholder: true,
+                        placeholderValue: 'Müşteri Seçin'
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Müşteriler yüklenirken hata:', error);
+        }
+    }
+
+    // Form gönderildiğinde customerId'yi ekle
+    document.getElementById('invoice_form').addEventListener('submit', function(e) {
+        const customerId = document.getElementById('choices-customer').value;
+        // Form verilerine customerId ekle
+        if (customerId) {
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'customerId';
+            hiddenInput.value = customerId;
+            this.appendChild(hiddenInput);
+        }
+    });
+</script>
+}
