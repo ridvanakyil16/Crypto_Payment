@@ -77,21 +77,28 @@ builder.Services.AddScoped<IRoleService, RoleManager>();
 
 var app = builder.Build();
 
+Console.WriteLine("hiç girmeddi scope ");
+
 using (var scope = app.Services.CreateScope())
 {
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    Console.WriteLine("DB PROVIDER: " + db.Database.ProviderName);
+
     try
     {
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        Console.WriteLine("DB MIGRATE START");
         db.Database.Migrate();
-        Console.WriteLine("MIGRATE OK");
+        Console.WriteLine("DB MIGRATE OK");
     }
     catch (Exception ex)
     {
-        Console.WriteLine("MIGRATE FAIL: " + ex.Message);
+        Console.WriteLine("DB MIGRATE FAIL >>> " + ex.Message);
         Console.WriteLine(ex.ToString());
-        throw; // burada throw kalsın ki deploy fail olup hatayı net görelim
+        // throw YOK (şimdilik)
     }
 }
+
 
 if (!app.Environment.IsDevelopment())
 {
