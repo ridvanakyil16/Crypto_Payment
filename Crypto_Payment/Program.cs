@@ -11,38 +11,40 @@ using Microsoft.Extensions.Options;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews()
-    .AddJsonOptions(o => o.JsonSerializerOptions.PropertyNameCaseInsensitive = true);;
+    .AddJsonOptions(o => o.JsonSerializerOptions.PropertyNameCaseInsensitive = true);
 
-// Heroku Postgres: DATABASE_URL -> Npgsql connection string
+Console.WriteLine("DATABASE_URL var mi? " +
+                  (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DATABASE_URL"))));
+
+
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
-if (!string.IsNullOrWhiteSpace(databaseUrl))
+builder.Services.AddDbContext<AppDbContext>(opt =>
 {
-    var uri = new Uri(databaseUrl);
-    var userInfo = uri.UserInfo.Split(':', 2);
-
-    var csb = new NpgsqlConnectionStringBuilder
+    if (!string.IsNullOrWhiteSpace(databaseUrl))
     {
-        Host = uri.Host,
-        Port = uri.Port,
-        Username = userInfo[0],
-        Password = userInfo.Length > 1 ? userInfo[1] : "",
-        Database = uri.AbsolutePath.TrimStart('/'),
+        var uri = new Uri(databaseUrl);
+        var userInfo = uri.UserInfo.Split(':', 2);
 
-        // Heroku Postgres için gerekli
-        SslMode = SslMode.Require,
-        TrustServerCertificate = true
-    };
+        var csb = new Npgsql.NpgsqlConnectionStringBuilder
+        {
+            Host = uri.Host,
+            Port = uri.Port,
+            Username = userInfo[0],
+            Password = userInfo.Length > 1 ? userInfo[1] : "",
+            Database = uri.AbsolutePath.TrimStart('/'),
+            SslMode = Npgsql.SslMode.Require,
+            TrustServerCertificate = true
+        };
 
-    builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(csb.ConnectionString));
-}
-else
-{
-    // Local: appsettings.json içindeki bağlantın (SqlServer / Local Pg vs.)
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseSqlite("Data Source=invoice.db"));
-}
-
+        opt.UseNpgsql(csb.ConnectionString);
+    }
+    else
+    {
+        builder.Services.AddDbContext<AppDbContext>(options =>
+            options.UseSqlite("Data Source=invoice.db"));
+    }
+});
 
 builder.Services
     .AddIdentity<User, IdentityRole>(options =>
@@ -77,8 +79,17 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        db.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("MIGRATE FAIL => " + ex.Message);
+        Console.WriteLine(ex.ToString());
+        // throw yok
+    }
 }
 
 if (!app.Environment.IsDevelopment())
