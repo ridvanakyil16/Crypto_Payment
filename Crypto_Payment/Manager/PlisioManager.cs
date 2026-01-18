@@ -1,27 +1,25 @@
 using System.Globalization;
 using System.Text.Json;
-using Crypto_Payment.DTOS;
 using Crypto_Payment.Services;
 using Microsoft.Extensions.Options;
+
+namespace Crypto_Payment.Manager;
 
 public class PlisioManager : IPlisioService
 {
     private readonly HttpClient _http;
     private readonly string _apiKey;
+    private readonly string _baseUrl;
 
-    public PlisioManager(HttpClient http, IConfiguration config)
+    public PlisioManager(HttpClient http, IOptions<PlisioOptions> opts)
     {
         _http = http;
-        _apiKey = config["Plisio:ApiKey"]; // appsettings.json'a koy
+        _apiKey = opts.Value.ApiKey;
+        _baseUrl = opts.Value.BaseUrl;
     }
 
-    public async Task<PlisioInvoiceResult> CreateInvoiceAsync(InvoiceDto dto)
+    public async Task<PlisioInvoiceResult> CreateInvoiceAsync(CreateInvoiceDto dto, string callbackUrl)
     {
-        if (dto == null) throw new ArgumentNullException(nameof(dto));
-
-        // callback_url için json=true ekle (Plisio bazı dillerde öneriyor)
-        var callbackUrl = AddJsonTrue(dto.CallbackUrl);
-
         var url =
             "https://api.plisio.net/api/v1/invoices/new" +
             $"?source_currency={Uri.EscapeDataString(dto.SourceCurrency)}" +
@@ -32,13 +30,10 @@ public class PlisioManager : IPlisioService
             $"&order_name={Uri.EscapeDataString(dto.OrderName)}" +
             $"&callback_url={Uri.EscapeDataString(callbackUrl)}" +
             $"&api_key={Uri.EscapeDataString(_apiKey)}";
-
         var resp = await _http.GetAsync(url);
         var body = await resp.Content.ReadAsStringAsync();
-
         using var doc = JsonDocument.Parse(body);
         var status = doc.RootElement.GetProperty("status").GetString();
-
         if (string.Equals(status, "success", StringComparison.OrdinalIgnoreCase))
         {
             var data = doc.RootElement.GetProperty("data");
@@ -68,62 +63,93 @@ public class PlisioManager : IPlisioService
     public async Task<PlisioInvoiceDetails?> GetInvoiceDetailsAsync(string? txnId)
     {
         if (string.IsNullOrEmpty(txnId)) return null;
-
         try
         {
-            var url = $"https://api.plisio.net/api/v1/operations/{txnId}?api_key={Uri.EscapeDataString(_apiKey)}";
+            // Use /invoices endpoint to get full details including wallet_hash
+            var url = $"https://api.plisio.net/api/v1/invoices/{txnId}?api_key={Uri.EscapeDataString(_apiKey)}";
             var resp = await _http.GetAsync(url);
             var body = await resp.Content.ReadAsStringAsync();
-
             using var doc = JsonDocument.Parse(body);
             var status = doc.RootElement.GetProperty("status").GetString();
-
             if (!string.Equals(status, "success", StringComparison.OrdinalIgnoreCase))
             {
                 return null;
             }
-
+            
             var data = doc.RootElement.GetProperty("data");
+            
+            // Invoice details are nested inside data.invoice
+            if (!data.TryGetProperty("invoice", out var invoice))
+            {
+                return null;
+            }
             
             var details = new PlisioInvoiceDetails
             {
-                Status = data.TryGetProperty("status", out var s) ? s.GetString() : null,
-                Amount = data.TryGetProperty("amount", out var a) ? a.GetString() : null,
-                Currency = data.TryGetProperty("currency", out var cur) ? cur.GetString() : null,
+                Status = invoice.TryGetProperty("status", out var s) ? s.GetString() : null,
+                Amount = invoice.TryGetProperty("amount", out var a) ? a.GetString() : null,
+                Currency = invoice.TryGetProperty("currency", out var cur) ? cur.GetString() : null,
                 TxIds = new List<string>()
             };
             
-            // Cüzdan adresi
-            if (data.TryGetProperty("wallet_hash", out var wh))
+            // Wallet address
+            if (invoice.TryGetProperty("wallet_hash", out var wh))
             {
                 details.WalletAddress = wh.GetString();
             }
             
-            // Expire time (Unix timestamp)
-            if (data.TryGetProperty("expire_utc", out var exp))
+            // Expire time (Unix timestamp as string)
+            if (invoice.TryGetProperty("expire_utc", out var exp))
             {
-                if (exp.TryGetInt64(out var expUnix))
+                string? expStr = null;
+                if (exp.ValueKind == JsonValueKind.String)
+                {
+                    expStr = exp.GetString();
+                }
+                else if (exp.ValueKind == JsonValueKind.Number)
+                {
+                    expStr = exp.GetInt64().ToString();
+                }
+                
+                if (!string.IsNullOrEmpty(expStr) && long.TryParse(expStr, out var expUnix))
                 {
                     details.ExpireTime = DateTimeOffset.FromUnixTimeSeconds(expUnix).UtcDateTime;
                 }
             }
             
-            // QR Code URL
-            if (data.TryGetProperty("qr_code", out var qr))
+            // QR Code URL - Generate from wallet address
+            if (invoice.TryGetProperty("wallet_hash", out var walletForQr))
             {
-                details.QrCodeUrl = qr.GetString();
+                var walletAddr = walletForQr.GetString();
+                if (!string.IsNullOrEmpty(walletAddr))
+                {
+                    details.QrCodeUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={Uri.EscapeDataString(walletAddr)}";
+                }
             }
             
-            // Transaction IDs (tx_ids array from Plisio)
-            if (data.TryGetProperty("tx_ids", out var txIds) && txIds.ValueKind == JsonValueKind.Array)
+            // Transaction IDs from tx array
+            if (invoice.TryGetProperty("tx", out var txArray) && txArray.ValueKind == JsonValueKind.Array)
             {
-                foreach (var txId in txIds.EnumerateArray())
+                foreach (var tx in txArray.EnumerateArray())
                 {
-                    var txIdStr = txId.GetString();
-                    if (!string.IsNullOrEmpty(txIdStr))
+                    if (tx.TryGetProperty("txid", out var txId))
                     {
-                        details.TxIds.Add(txIdStr);
+                        var txIdStr = txId.GetString();
+                        if (!string.IsNullOrEmpty(txIdStr))
+                        {
+                            details.TxIds.Add(txIdStr);
+                        }
                     }
+                }
+            }
+            
+            // Also check tx_id field
+            if (invoice.TryGetProperty("tx_id", out var singleTxId))
+            {
+                var txIdStr = singleTxId.GetString();
+                if (!string.IsNullOrEmpty(txIdStr) && !details.TxIds.Contains(txIdStr))
+                {
+                    details.TxIds.Add(txIdStr);
                 }
             }
             
@@ -155,6 +181,6 @@ public class PlisioInvoiceResult
 
 public class PlisioOptions
 {
-    public string ApiKey { get; set; }
+    public string ApiKey { get; set; } = "";
     public string BaseUrl { get; set; } = "https://api.plisio.net";
 }
