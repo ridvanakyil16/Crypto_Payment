@@ -16,5 +16,6 @@ namespace Crypto_Payment.DTOS
         public string Status { get; set; } = "pending";
         public DateTime? ExpireTime { get; set; }
         public string? TxnId { get; set; }
+        public List<string> TxIds { get; set; } = new List<string>();
     }
 }
