@@ -14,7 +14,7 @@ public class PlisioManager : IPlisioService
         _http = http;
         _apiKey = config["Plisio:ApiKey"]; // appsettings.json'a koy
     }
-    
+
     public async Task<PlisioInvoiceResult> CreateInvoiceAsync(InvoiceDto dto)
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -36,9 +36,7 @@ public class PlisioManager : IPlisioService
         var resp = await _http.GetAsync(url);
         var body = await resp.Content.ReadAsStringAsync();
 
-        // HTTP hata ise bile body içinde Plisio mesajı olabilir
         using var doc = JsonDocument.Parse(body);
-
         var status = doc.RootElement.GetProperty("status").GetString();
 
         if (string.Equals(status, "success", StringComparison.OrdinalIgnoreCase))
@@ -57,7 +55,6 @@ public class PlisioManager : IPlisioService
         }
         else
         {
-            // status:error -> data.message / data.code gibi
             var data = doc.RootElement.GetProperty("data");
             return new PlisioInvoiceResult
             {
@@ -92,15 +89,16 @@ public class PlisioManager : IPlisioService
             {
                 Status = data.TryGetProperty("status", out var s) ? s.GetString() : null,
                 Amount = data.TryGetProperty("amount", out var a) ? a.GetString() : null,
-                Currency = data.TryGetProperty("currency", out var cur) ? cur.GetString() : null
+                Currency = data.TryGetProperty("currency", out var cur) ? cur.GetString() : null,
+                TxIds = new List<string>()
             };
-
+            
             // Cüzdan adresi
             if (data.TryGetProperty("wallet_hash", out var wh))
             {
                 details.WalletAddress = wh.GetString();
             }
-
+            
             // Expire time (Unix timestamp)
             if (data.TryGetProperty("expire_utc", out var exp))
             {
@@ -109,13 +107,26 @@ public class PlisioManager : IPlisioService
                     details.ExpireTime = DateTimeOffset.FromUnixTimeSeconds(expUnix).UtcDateTime;
                 }
             }
-
+            
             // QR Code URL
             if (data.TryGetProperty("qr_code", out var qr))
             {
                 details.QrCodeUrl = qr.GetString();
             }
-
+            
+            // Transaction IDs (tx_ids array from Plisio)
+            if (data.TryGetProperty("tx_ids", out var txIds) && txIds.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var txId in txIds.EnumerateArray())
+                {
+                    var txIdStr = txId.GetString();
+                    if (!string.IsNullOrEmpty(txIdStr))
+                    {
+                        details.TxIds.Add(txIdStr);
+                    }
+                }
+            }
+            
             return details;
         }
         catch (Exception)
@@ -135,9 +146,9 @@ public class PlisioManager : IPlisioService
 public class PlisioInvoiceResult
 {
     public bool IsSuccess { get; set; }
-    public string? InvoiceId { get; set; }   // txn_id
-    public string? TxnId { get; set; }       // txn_id (aynı değer)
-    public string? InvoiceUrl { get; set; }  // invoice_url
+    public string? InvoiceId { get; set; }
+    public string? TxnId { get; set; }
+    public string? InvoiceUrl { get; set; }
     public string? ErrorMessage { get; set; }
     public int? ErrorCode { get; set; }
 }
