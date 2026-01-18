@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Crypto_Payment.DTOS;
 using Crypto_Payment.Services;
 using Microsoft.Extensions.Options;
 
@@ -18,8 +19,13 @@ public class PlisioManager : IPlisioService
         _baseUrl = opts.Value.BaseUrl;
     }
 
-    public async Task<PlisioInvoiceResult> CreateInvoiceAsync(CreateInvoiceDto dto, string callbackUrl)
+    public async Task<PlisioInvoiceResult> CreateInvoiceAsync(InvoiceDto dto)
     {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        
+        // callback_url için json=true ekle
+        var callbackUrl = AddJsonTrue(dto.CallbackUrl);
+        
         var url =
             "https://api.plisio.net/api/v1/invoices/new" +
             $"?source_currency={Uri.EscapeDataString(dto.SourceCurrency)}" +
