@@ -1,3 +1,4 @@
+using Crypto_Payment.Manager;
 using Microsoft.EntityFrameworkCore;
 using Crypto_Payment.Data;
 using Crypto_Payment.Helpers;
@@ -8,16 +9,22 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Npgsql;
 using Microsoft.Extensions.Options;
 
+
 var builder = WebApplication.CreateBuilder(args);
+
 
 builder.Services.AddControllersWithViews()
     .AddJsonOptions(o => o.JsonSerializerOptions.PropertyNameCaseInsensitive = true);
+
 
 Console.WriteLine("DATABASE_URL var mi? " +
                   (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DATABASE_URL"))));
 
 
+
+
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+
 
 builder.Services.AddDbContext<AppDbContext>(opt =>
 {
@@ -25,6 +32,7 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
     {
         var uri = new Uri(databaseUrl);
         var userInfo = uri.UserInfo.Split(':', 2);
+
 
         var csb = new Npgsql.NpgsqlConnectionStringBuilder
         {
@@ -37,6 +45,7 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
             TrustServerCertificate = true
         };
 
+
         opt.UseNpgsql(csb.ConnectionString);
     }
     else
@@ -46,6 +55,7 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
     }
 });
 
+
 builder.Services
     .AddIdentity<User, IdentityRole>(options =>
     {
@@ -53,13 +63,16 @@ builder.Services
         options.Lockout.MaxFailedAccessAttempts = 5;
         options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
 
+
         options.Password.RequiredLength = 6;
         options.User.RequireUniqueEmail = true;
     })
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders(); // Email confirm + 2FA token providerlar
 
+
 builder.Services.AddHttpClient<IPlisioService, PlisioManager>();
+
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -67,57 +80,3 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/api/auth/denied";
 });
 
-builder.Services.Configure<SmtpSettings>(
-    builder.Configuration.GetSection("Smtp"));
-
-builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
-builder.Services.AddScoped<ICustomerService, CustomerManager>();
-builder.Services.AddScoped<IInvoiceService, InvoiceManager>();
-builder.Services.AddScoped<IRoleService, RoleManager>();
-
-var app = builder.Build();
-
-Console.WriteLine("hiç girmeddi scope ");
-
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-    Console.WriteLine("DB PROVIDER: " + db.Database.ProviderName);
-
-    try
-    {
-        Console.WriteLine("DB MIGRATE START");
-        db.Database.Migrate();
-        Console.WriteLine("DB MIGRATE OK");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("DB MIGRATE FAIL >>> " + ex.Message);
-        Console.WriteLine(ex.ToString());
-        // throw YOK (şimdilik)
-    }
-}
-
-
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
-}
-
-app.UseHttpsRedirection();
-app.UseStaticFiles(); // Static dosyalar burada çözülür
-
-app.UseRouting();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-
-// app.MapControllerRoute(
-//     name: "default",
-//     pattern: "{controller=Home}/{action=Index}/{id?}");
-
-app.Run();
