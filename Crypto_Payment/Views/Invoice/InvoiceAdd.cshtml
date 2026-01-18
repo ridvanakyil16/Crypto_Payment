@@ -1,0 +1,174 @@
+@{
+    ViewBag.Title = "Fatura OluÅtur";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid">
+    <!-- start page title -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between bg-galaxy-transparent">
+                <h4 class="mb-sm-0">Fatura OluÅtur</h4>
+
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="javascript: void(0);">Faturalar</a></li>
+                        <li class="breadcrumb-item active">Fatura OluÅtur</li>
+                    </ol>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- end page title -->
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <form asp-controller="Invoice" asp-action="CreateInvoice" method="post">
+                        <div class="mb-3">
+                            <label for="customerName" class="form-label">Musteri Adi</label>
+                            <input type="text" class="form-control" id="customerName" name="customerName" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="customerEmail" class="form-label">Musteri Email</label>
+                            <input type="email" class="form-control" id="customerEmail" name="customerEmail" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="cryptoCurrency" class="form-label">Para Birimi (Crypto)</label>
+                            <select class="form-select" id="cryptoCurrency" name="cryptoCurrency" required>
+                                <option value="USDT_TRX">USDT TRX</option>
+                                <option value="BTC">BTC</option>
+                                <option value="ETH">ETH</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="fiatCurrency" class="form-label">GerÃ§ek Para Birimi</label>
+                            <select class="form-select" id="fiatCurrency" name="fiatCurrency" required>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EURO</option>
+                                <option value="TRY">TL</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">AÃ§Ä±klama</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+
+                        <h2 class="mt-4 mb-3">ÃpÃ¼n Bilgileri</h2>
+
+                        <div id="products-container">
+                            <div class="product-row row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">ÃrÃ¼n AdÄ±</label>
+                                    <input type="text" class="form-control product-name" name="productNames[]" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Miktar</label>
+                                    <input type="number" class="form-control product-quantity" name="productQuantities[]" value="1" min="1" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Birim Fiyat</label>
+                                    <input type="number" class="form-control product-price" name="productPrices[]" step="0.01" min="0" required>
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end">
+                                    <button type="button" class="btn btn-danger remove-product" style="display: none;">
+                                        <i class="fas fa-trash"></i> KaldÄ±r
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-secondary mb-3" id="add-product">
+                            <i class="fas fa-plus"></i> ÃrÃ¼n Ekle
+                        </button>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Fatura OluÅtur
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">Ãzet</h5>
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr>
+                                <th scope="row">Ara Toplam</th>
+                                <td id="cart-subtotal">0.00</td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><strong>Genel Toplam</strong></th>
+                                <td id="cart-total"><strong>0.00</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const productsContainer = document.getElementById('products-container');
+            const addProductBtn = document.getElementById('add-product');
+
+            // ÃrÃ¼n ekle
+            addProductBtn.addEventListener('click', function () {
+                const newRow = document.querySelector('.product-row').cloneNode(true);
+                newRow.querySelectorAll('input').forEach(input => {
+                    if (input.type === 'number' && input.classList.contains('product-quantity')) {
+                        input.value = '1';
+                    } else {
+                        input.value = '';
+                    }
+                });
+                newRow.querySelector('.remove-product').style.display = 'block';
+                productsContainer.appendChild(newRow);
+                updateCart();
+            });
+
+            // ÃpÃ¼n kaldÄ±r
+            productsContainer.addEventListener('click', function (e) {
+                if (e.target.classList.contains('remove-product') || e.target.parentElement.classList.contains('remove-product')) {
+                    const row = e.target.closest('.product-row');
+                    if (document.querySelectorAll('.product-row').length > 1) {
+                        row.remove();
+                        updateCart();
+                    }
+                }
+            });
+
+            // Sepet gÃ¼ncelleme
+            productsContainer.addEventListener('input', function () {
+                updateCart();
+            });
+
+            function updateCart() {
+                let subtotal = 0;
+                document.querySelectorAll('.product-row').forEach(row => {
+                    const quantity = parseFloat(row.querySelector('.product-quantity').value) || 0;
+                    const price = parseFloat(row.querySelector('.product-price').value) || 0;
+                    subtotal += quantity * price;
+                });
+
+                const tax = 0;
+                const total = subtotal + tax;
+
+                document.getElementById('cart-subtotal').textContent = subtotal.toFixed(2);
+                document.getElementById('cart-total').innerHTML = '<strong>' + total.toFixed(2) + '</strong>';
+            }
+        });
+    </script>
+}
