@@ -142,7 +142,7 @@
     </div>
     <div class="toast" id="toast"></div>
     <script>
-        const expireTime = @(Model.ExpireTime.HasValue ? $"new Date('{Model.ExpireTime.Value:yyyy-MM-ddTHH:mm:ssZ}')" : "null");
+        const expireTime = @Html.Raw(Model.ExpireTime.HasValue ? $"new Date('{Model.ExpireTime.Value:yyyy-MM-ddTHH:mm:ssZ}')" : "null");
         const currentStatus = '@Model.Status';
         const invoiceId = @Model.InvoiceId;
         let confettiTriggered = false;
