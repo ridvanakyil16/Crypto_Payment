@@ -341,11 +341,9 @@
             subtotal += lineTotal;
         });
 
-        const tax = subtotal * 0.18;
-        const total = subtotal + tax;
+        const total = subtotal;
 
         document.getElementById('cart-subtotal').value = '$' + subtotal.toFixed(2);
-        document.getElementById('cart-tax').value = '$' + tax.toFixed(2);
         document.getElementById('cart-total').value = '$' + total.toFixed(2);
         document.getElementById('sourceAmount').value = total.toFixed(2);
     }

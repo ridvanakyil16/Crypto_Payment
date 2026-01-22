@@ -26,9 +26,12 @@ public class PlisioManager : IPlisioService
         // callback_url için json=true ekle
         var callbackUrl = AddJsonTrue(dto.CallbackUrl);
         
+        // Para birimi normalizasyonu (EURO → EUR)
+        var sourceCurrency = dto.SourceCurrency.ToUpper() == "EURO" ? "EUR" : dto.SourceCurrency;
+        
         var url =
             "https://api.plisio.net/api/v1/invoices/new" +
-            $"?source_currency={Uri.EscapeDataString(dto.SourceCurrency)}" +
+            $"?source_currency={Uri.EscapeDataString(sourceCurrency)}" +
             $"&source_amount={Uri.EscapeDataString(dto.SourceAmount.ToString(CultureInfo.InvariantCulture))}" +
             $"&order_number={Uri.EscapeDataString(dto.OrderNumber)}" +
             $"&currency={Uri.EscapeDataString(dto.Currency)}" +
