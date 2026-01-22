@@ -54,7 +54,7 @@ public class CallbackController : ControllerBase
             var newStatus = MapPlisioStatus(status);
             if (newStatus != invoice.Status)
             {
-                await _invoiceService.UpdateStatusAsync(invoice.Id, newStatus);
+                await _invoiceService.UpdateStatusAsync(invoice.Id.Value, newStatus);
                 _logger.LogInformation($"Invoice {invoice.Id} status updated from {invoice.Status} to {newStatus}");
             }
             
