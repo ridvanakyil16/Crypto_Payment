@@ -26,6 +26,12 @@ public class CallbackController : ControllerBase
     {
         try
         {
+            // Tüm query parametrelerini logla
+            var allParams = string.Join(", ", Request.Query.Select(q => $"{q.Key}={q.Value}"));
+            _logger.LogInformation($"=== PLISIO CALLBACK RECEIVED ===");
+            _logger.LogInformation($"Method: {Request.Method}");
+            _logger.LogInformation($"All Query Params: {allParams}");
+            
             // Query string veya form data'dan parametreleri al
             var txnId = Request.Query["txn_id"].FirstOrDefault() 
                         ?? Request.Form["txn_id"].FirstOrDefault();
@@ -34,7 +40,7 @@ public class CallbackController : ControllerBase
             var orderId = Request.Query["order_number"].FirstOrDefault() 
                          ?? Request.Form["order_number"].FirstOrDefault();
             
-            _logger.LogInformation($"Plisio Callback received - TxnId: {txnId}, Status: {status}, OrderId: {orderId}");
+            _logger.LogInformation($"Parsed - TxnId: {txnId}, Status: {status}, OrderId: {orderId}");
             
             if (string.IsNullOrEmpty(txnId))
             {
@@ -65,6 +71,46 @@ public class CallbackController : ControllerBase
         {
             _logger.LogError(ex, "Error processing Plisio callback");
             return Ok(new { status = "error", message = ex.Message });
+        }
+    }
+    
+    /// <summary>
+    /// Test için manuel callback simülasyonu
+    /// Kullanım: GET /api/callback/test?invoiceId=123&status=completed
+    /// </summary>
+    [HttpGet("test")]
+    public async Task<IActionResult> TestCallback([FromQuery] int invoiceId, [FromQuery] string status = "completed")
+    {
+        try
+        {
+            _logger.LogInformation($"TEST CALLBACK - InvoiceId: {invoiceId}, Status: {status}");
+            
+            var invoice = await _invoiceService.GetByIdAsync(invoiceId);
+            if (invoice == null)
+            {
+                return NotFound(new { error = "Invoice not found", invoiceId });
+            }
+            
+            var oldStatus = invoice.Status;
+            var newStatus = MapPlisioStatus(status);
+            
+            await _invoiceService.UpdateStatusAsync(invoiceId, newStatus);
+            
+            _logger.LogInformation($"TEST CALLBACK SUCCESS - Invoice {invoiceId} status: {oldStatus} → {newStatus}");
+            
+            return Ok(new 
+            { 
+                success = true,
+                invoiceId = invoiceId,
+                oldStatus = oldStatus,
+                newStatus = newStatus,
+                message = $"Invoice status updated from '{oldStatus}' to '{newStatus}'"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"TEST CALLBACK ERROR - InvoiceId: {invoiceId}");
+            return StatusCode(500, new { error = ex.Message });
         }
     }
     
