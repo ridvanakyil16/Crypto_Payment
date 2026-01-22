@@ -175,12 +175,16 @@
         if (currentStatus === 'completed' || currentStatus === 'confirmed') { setTimeout(triggerConfetti, 500); }
         
         // Ödeme durumunu kontrol et (polling)
+        let statusCheckCount = 0;
         async function checkPaymentStatus() {
             try {
+                statusCheckCount++;
                 const response = await fetch(`/api/invoices/status/${invoiceId}`);
                 if (response.ok) {
                     const data = await response.json();
                     const newStatus = data.status;
+                    
+                    console.log(`Status check #${statusCheckCount}: ${newStatus}`);
                     
                     // Durum değiştiyse sayfayı güncelle
                     if (newStatus !== currentStatus) {
@@ -189,13 +193,12 @@
                             document.getElementById('statusBadge').className = 'status-badge status-completed';
                             document.getElementById('statusBadge').innerHTML = '<svg class="status-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><span>Payment Confirmed!</span>';
                             triggerConfetti();
-                            showToast('Ödeme başarıyla tamamlandı! Yönlendiriliyorsunuz...');
-                            setTimeout(() => { window.location.reload(); }, 3000);
+                            showSuccessAlert();
                         } else if (newStatus === 'expired' || newStatus === 'cancelled') {
                             // Başarısız ödeme
                             document.getElementById('statusBadge').className = 'status-badge status-expired';
                             document.getElementById('statusBadge').innerHTML = '<svg class="status-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg><span>' + (newStatus === 'expired' ? 'Payment Expired' : 'Payment Cancelled') + '</span>';
-                            showToast('Ödeme süresi doldu veya iptal edildi.');
+                            showErrorAlert(newStatus === 'expired' ? 'Ödeme süresi doldu!' : 'Ödeme iptal edildi!');
                         }
                     }
                 }
@@ -204,8 +207,25 @@
             }
         }
         
-        // Sadece pending durumundaysa polling yap
-        if (currentStatus === 'pending' || currentStatus === 'new') {
+        function showSuccessAlert() {
+            if (confirm('✅ ÖDEME BAŞARILI!\n\nÖdemeniz başarıyla tamamlandı.\n\nTamam\'a basarak devam edin.')) {
+                window.location.href = '/invoices';
+            }
+        }
+        
+        function showErrorAlert(message) {
+            alert('❌ ÖDEME BAŞARISIZ!\n\n' + message + '\n\nLütfen tekrar deneyin.');
+        }
+        
+        // Sayfa yüklendiğinde durumu kontrol et
+        if (currentStatus === 'completed' || currentStatus === 'confirmed') {
+            // Zaten tamamlanmış
+            showSuccessAlert();
+        } else if (currentStatus === 'expired' || currentStatus === 'cancelled') {
+            // Zaten iptal/süresi dolmuş
+            showErrorAlert(currentStatus === 'expired' ? 'Ödeme süresi doldu!' : 'Ödeme iptal edildi!');
+        } else {
+            // Pending durumundaysa polling yap
             setInterval(checkPaymentStatus, 5000); // Her 5 saniyede bir kontrol et
         }
     </script>

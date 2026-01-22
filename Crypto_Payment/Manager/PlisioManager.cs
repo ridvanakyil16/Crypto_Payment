@@ -11,12 +11,14 @@ public class PlisioManager : IPlisioService
     private readonly HttpClient _http;
     private readonly string _apiKey;
     private readonly string _baseUrl;
+    private readonly ILogger<PlisioManager> _logger;
 
-    public PlisioManager(HttpClient http, IOptions<PlisioOptions> opts)
+    public PlisioManager(HttpClient http, IOptions<PlisioOptions> opts, ILogger<PlisioManager> logger)
     {
         _http = http;
         _apiKey = opts.Value.ApiKey;
         _baseUrl = opts.Value.BaseUrl;
+        _logger = logger;
     }
 
     public async Task<PlisioInvoiceResult> CreateInvoiceAsync(InvoiceDto dto)
@@ -78,10 +80,14 @@ public class PlisioManager : IPlisioService
             var url = $"https://api.plisio.net/api/v1/invoices/{txnId}?api_key={Uri.EscapeDataString(_apiKey)}";
             var resp = await _http.GetAsync(url);
             var body = await resp.Content.ReadAsStringAsync();
+            
+            _logger.LogInformation($"Plisio API Response for {txnId}: {body}");
+            
             using var doc = JsonDocument.Parse(body);
             var status = doc.RootElement.GetProperty("status").GetString();
             if (!string.Equals(status, "success", StringComparison.OrdinalIgnoreCase))
             {
+                _logger.LogWarning($"Plisio API returned non-success status: {status}");
                 return null;
             }
             
@@ -90,6 +96,7 @@ public class PlisioManager : IPlisioService
             // Invoice details are nested inside data.invoice
             if (!data.TryGetProperty("invoice", out var invoice))
             {
+                _logger.LogWarning("No 'invoice' property in Plisio response data");
                 return null;
             }
             
@@ -101,11 +108,21 @@ public class PlisioManager : IPlisioService
                 TxIds = new List<string>()
             };
             
-            // Wallet address
-            if (invoice.TryGetProperty("wallet_hash", out var wh))
+            // Wallet address - try multiple fields
+            if (invoice.TryGetProperty("wallet_hash", out var wh) && !string.IsNullOrEmpty(wh.GetString()))
             {
                 details.WalletAddress = wh.GetString();
             }
+            else if (invoice.TryGetProperty("wallet", out var w) && !string.IsNullOrEmpty(w.GetString()))
+            {
+                details.WalletAddress = w.GetString();
+            }
+            else if (invoice.TryGetProperty("address", out var addr) && !string.IsNullOrEmpty(addr.GetString()))
+            {
+                details.WalletAddress = addr.GetString();
+            }
+            
+            _logger.LogInformation($"Wallet Address: {details.WalletAddress ?? "NULL"}");
             
             // Expire time (Unix timestamp as string)
             if (invoice.TryGetProperty("expire_utc", out var exp))
@@ -127,13 +144,21 @@ public class PlisioManager : IPlisioService
             }
             
             // QR Code URL - Generate from wallet address
-            if (invoice.TryGetProperty("wallet_hash", out var walletForQr))
+            if (!string.IsNullOrEmpty(details.WalletAddress))
             {
-                var walletAddr = walletForQr.GetString();
-                if (!string.IsNullOrEmpty(walletAddr))
+                // Create QR with wallet address and amount if available
+                var qrData = details.WalletAddress;
+                if (!string.IsNullOrEmpty(details.Amount) && !string.IsNullOrEmpty(details.Currency))
                 {
-                    details.QrCodeUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={Uri.EscapeDataString(walletAddr)}";
+                    // For crypto payments, include amount in QR
+                    qrData = $"{details.WalletAddress}?amount={details.Amount}";
                 }
+                details.QrCodeUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={Uri.EscapeDataString(qrData)}";
+                _logger.LogInformation($"QR Code URL generated: {details.QrCodeUrl}");
+            }
+            else
+            {
+                _logger.LogWarning("Cannot generate QR code: Wallet address is null or empty");
             }
             
             // Transaction IDs from tx array
