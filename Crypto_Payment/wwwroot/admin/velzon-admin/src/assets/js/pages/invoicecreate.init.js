@@ -154,7 +154,7 @@ function new_link() {
 
 remove();
 /* Set rates + misc */
-var taxRate = 0.125;
+var taxRate = 0;
 var shippingRate = 65.0;
 var discountRate = 0.15;
 
@@ -189,7 +189,7 @@ function recalculateCart() {
 	});
 
 	/* Calculate totals */
-	var tax = subtotal * taxRate;
+	var tax = 0;
 	var discount = subtotal * discountRate;
 
 	var shipping = subtotal > 0 ? shippingRate : 0;
@@ -197,7 +197,7 @@ function recalculateCart() {
 
 	document.getElementById("cart-subtotal").value =
 		paymentSign + subtotal.toFixed(2);
-	document.getElementById("cart-tax").value = paymentSign + tax.toFixed(2);
+
 	document.getElementById("cart-shipping").value =
 		paymentSign + shipping.toFixed(2);
 	document.getElementById("cart-total").value = paymentSign + total.toFixed(2);
@@ -371,7 +371,7 @@ if ((viewobj != '') && (options == "edit-invoice")) {
 	}, 300);
 
 	document.getElementById("cart-subtotal").value = "$" + viewobj.order_summary.sub_total;
-	document.getElementById("cart-tax").value = "$" + viewobj.order_summary.estimated_tex;
+
 	document.getElementById("cart-discount").value = "$" + viewobj.order_summary.discount;
 	document.getElementById("cart-shipping").value = "$" + viewobj.order_summary.shipping_charge;
 	document.getElementById("cart-total").value = "$" + viewobj.order_summary.total_amount;
@@ -425,7 +425,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		var company_details_address = document.getElementById("companyAddress").value;
 		var company_details_zip_code = document.getElementById("companyaddpostalcode").value;
 		var order_summary_sub_total = (document.getElementById("cart-subtotal").value).slice(1);
-		var order_summary_estimated_tex = (document.getElementById("cart-tax").value).slice(1);
+			var order_summary_estimated_tex = "0";
 		var order_summary_discount = (document.getElementById("cart-discount").value).slice(1);
 		var order_summary_shipping_charge = (document.getElementById("cart-shipping").value).slice(1);
 		var order_summary_total_amount = (document.getElementById("cart-total").value).slice(1);
