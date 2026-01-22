@@ -174,20 +174,24 @@
         setInterval(updateCountdown, 1000);
         if (currentStatus === 'completed' || currentStatus === 'confirmed') { setTimeout(triggerConfetti, 500); }
         
-        // Ödeme durumunu kontrol et (polling)
+        // Ödeme durumunu kontrol et (polling) - Her 3 saniyede bir
         let statusCheckCount = 0;
         async function checkPaymentStatus() {
             try {
                 statusCheckCount++;
+                console.log(`[POLLING #${statusCheckCount}] Checking status for invoice ${invoiceId}...`);
+                
                 const response = await fetch(`/api/invoices/status/${invoiceId}`);
                 if (response.ok) {
                     const data = await response.json();
                     const newStatus = data.status;
+                    const wasUpdated = data.updated || false;
                     
-                    console.log(`Status check #${statusCheckCount}: ${newStatus}`);
+                    console.log(`[POLLING #${statusCheckCount}] Current: ${currentStatus}, New: ${newStatus}, Updated: ${wasUpdated}`);
                     
                     // Durum değiştiyse sayfayı güncelle
                     if (newStatus !== currentStatus) {
+                        console.log(`[STATUS CHANGED] ${currentStatus} → ${newStatus}`);
                         if (newStatus === 'completed' || newStatus === 'confirmed') {
                             // Başarılı ödeme
                             document.getElementById('statusBadge').className = 'status-badge status-completed';
@@ -226,7 +230,9 @@
             showErrorAlert(currentStatus === 'expired' ? 'Ödeme süresi doldu!' : 'Ödeme iptal edildi!');
         } else {
             // Pending durumundaysa polling yap
-            setInterval(checkPaymentStatus, 5000); // Her 5 saniyede bir kontrol et
+            console.log('[POLLING] Starting status polling every 3 seconds...');
+            setInterval(checkPaymentStatus, 3000); // Her 3 saniyede bir kontrol et
+            checkPaymentStatus(); // Hemen bir kez çağır
         }
     </script>
     @functions {

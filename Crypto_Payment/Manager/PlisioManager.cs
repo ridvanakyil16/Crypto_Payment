@@ -27,6 +27,7 @@ public class PlisioManager : IPlisioService
         
         // callback_url için json=true ekle
         var callbackUrl = AddJsonTrue(dto.CallbackUrl);
+        _logger.LogInformation($"[CREATE INVOICE] Callback URL: {callbackUrl}");
         
         // Para birimi normalizasyonu (EURO → EUR)
         var sourceCurrency = dto.SourceCurrency.ToUpper() == "EURO" ? "EUR" : dto.SourceCurrency;
@@ -41,6 +42,8 @@ public class PlisioManager : IPlisioService
             $"&order_name={Uri.EscapeDataString(dto.OrderName)}" +
             $"&callback_url={Uri.EscapeDataString(callbackUrl)}" +
             $"&api_key={Uri.EscapeDataString(_apiKey)}";
+        
+        _logger.LogInformation($"[CREATE INVOICE] Plisio API URL: {url.Replace(_apiKey, "***")}");
         var resp = await _http.GetAsync(url);
         var body = await resp.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(body);

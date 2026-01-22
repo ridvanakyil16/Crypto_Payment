@@ -70,33 +70,38 @@ public class InvoicesController : ControllerBase
                 return NotFound(new { status = "not_found" });
             }
             
-            // Eğer zaten completed veya expired ise direkt dön
-            if (invoice.Status == "completed" || invoice.Status == "expired")
-            {
-                return Ok(new { status = invoice.Status });
-            }
+            var currentStatus = invoice.Status ?? "pending";
             
-            // Plisio'dan güncel durumu al
+            // Plisio'dan her zaman güncel durumu kontrol et (completed/expired bile olsa)
             if (!string.IsNullOrEmpty(invoice.TxnId))
             {
                 var plisioDetails = await _plisioService.GetInvoiceDetailsAsync(invoice.TxnId);
                 if (plisioDetails != null && !string.IsNullOrEmpty(plisioDetails.Status))
                 {
-                    var newStatus = MapPlisioStatus(plisioDetails.Status);
+                    var plisioStatus = plisioDetails.Status;
+                    var newStatus = MapPlisioStatus(plisioStatus);
+                    
+                    Console.WriteLine($"[STATUS CHECK] Invoice {id}: DB={currentStatus}, Plisio={plisioStatus}, Mapped={newStatus}");
                     
                     // Durum değiştiyse güncelle
-                    if (newStatus != invoice.Status)
+                    if (newStatus != currentStatus)
                     {
                         await _service.UpdateStatusAsync(id, newStatus);
-                        return Ok(new { status = newStatus });
+                        Console.WriteLine($"[STATUS UPDATE] Invoice {id}: {currentStatus} → {newStatus}");
+                        return Ok(new { status = newStatus, updated = true, oldStatus = currentStatus });
                     }
+                }
+                else
+                {
+                    Console.WriteLine($"[STATUS CHECK] Invoice {id}: Plisio details null or status empty");
                 }
             }
             
-            return Ok(new { status = invoice.Status ?? "pending" });
+            return Ok(new { status = currentStatus, updated = false });
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"[STATUS ERROR] Invoice {id}: {ex.Message}");
             return StatusCode(500, new { status = "error", message = ex.Message });
         }
     }
