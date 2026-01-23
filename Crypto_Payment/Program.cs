@@ -24,6 +24,7 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 {
     if (!string.IsNullOrWhiteSpace(databaseUrl))
     {
+        // Heroku PostgreSQL
         var uri = new Uri(databaseUrl);
         var userInfo = uri.UserInfo.Split(':', 2);
 
@@ -39,11 +40,13 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
         };
 
         opt.UseNpgsql(csb.ConnectionString);
+        Console.WriteLine("[DATABASE] Using PostgreSQL (Heroku)");
     }
     else
     {
-        builder.Services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlite("Data Source=invoice.db"));
+        // Local SQLite
+        opt.UseSqlite("Data Source=invoice.db");
+        Console.WriteLine("[DATABASE] Using SQLite (Local Development)");
     }
 });
 
