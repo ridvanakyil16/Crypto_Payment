@@ -4,6 +4,7 @@ using Crypto_Payment.Services;
 
 namespace Crypto_Payment.Controllers
 {
+    [Route("api/[controller]")]
     public class PaymentController : Controller
     {
         private readonly IInvoiceService _invoiceService;
@@ -58,6 +59,49 @@ namespace Crypto_Payment.Controllers
             return View(viewModel);
         }
 
+        [HttpGet("/result-invoice/{id}")]
+        public async Task<IActionResult> ResultInvoice(int id)
+        {
+            var invoice = await _invoiceService.GetByIdAsync(id);
+            if (invoice == null)
+            {
+                return NotFound();
+            }
+            
+            var plisioDetails = await _plisioService.GetInvoiceDetailsAsync(invoice.TxnId);
+
+            var viewModel = new PaymentViewModel
+            {
+                InvoiceId = invoice.Id ?? 0,
+                OrderNumber = invoice.OrderNumber ?? $"INV-{invoice.Id}",
+                OrderName = invoice.OrderName,
+                Email = invoice.Email,
+                SourceAmount = invoice.SourceAmount,
+                SourceCurrency = invoice.SourceCurrency ?? "USD",
+                CryptoCurrency = invoice.Currency ?? "USDT_TRX",
+                Status = invoice.Status ?? "pending",
+                TxnId = invoice.TxnId
+            };
+
+            if (plisioDetails != null)
+            {
+                viewModel.WalletAddress = plisioDetails.WalletAddress ?? "";
+                viewModel.CryptoAmount = plisioDetails.Amount ?? "0";
+                viewModel.Network = GetNetworkName(invoice.Currency);
+                viewModel.ExpireTime = plisioDetails.ExpireTime;
+                viewModel.QrCodeUrl = plisioDetails.QrCodeUrl;
+                viewModel.TxIds = plisioDetails.TxIds ?? new List<string>();
+                
+                // Update status from Plisio if available
+                if (!string.IsNullOrEmpty(plisioDetails.Status))
+                {
+                    viewModel.Status = plisioDetails.Status;
+                }
+            }
+            
+            return View(viewModel);
+        }
+        
         private string GetNetworkName(string? currency)
         {
             if (string.IsNullOrEmpty(currency)) return "Unknown";

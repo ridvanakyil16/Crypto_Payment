@@ -3218,11 +3218,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/ridvanakyil/RiderProjects/Solution1_Crypto/Crypto_Payment/Crypto_Payment.csproj",
+      "projectUniqueName": "/Users/ridvanakyil/Desktop/Crypto_Payment_Test/Crypto_Payment/Crypto_Payment/Crypto_Payment.csproj",
       "projectName": "Crypto_Payment",
-      "projectPath": "/Users/ridvanakyil/RiderProjects/Solution1_Crypto/Crypto_Payment/Crypto_Payment.csproj",
+      "projectPath": "/Users/ridvanakyil/Desktop/Crypto_Payment_Test/Crypto_Payment/Crypto_Payment/Crypto_Payment.csproj",
       "packagesPath": "/Users/ridvanakyil/.nuget/packages/",
-      "outputPath": "/Users/ridvanakyil/RiderProjects/Solution1_Crypto/Crypto_Payment/obj/",
+      "outputPath": "/Users/ridvanakyil/Desktop/Crypto_Payment_Test/Crypto_Payment/Crypto_Payment/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/Users/ridvanakyil/.nuget/NuGet/NuGet.Config"

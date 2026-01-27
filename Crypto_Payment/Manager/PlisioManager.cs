@@ -23,6 +23,7 @@ public class PlisioManager : IPlisioService
 
     public async Task<PlisioInvoiceResult> CreateInvoiceAsync(InvoiceDto dto)
     {
+        string apiKey = "8cTh9ysB5sGvUd6UfX0heH2VGRNpmKrsScW_L54Qk8T5xrlhvBKuGyI4cmacMu6q";
         if (dto == null) throw new ArgumentNullException(nameof(dto));
         
         // callback_url için json=true ekle
@@ -41,9 +42,9 @@ public class PlisioManager : IPlisioService
             $"&email={Uri.EscapeDataString(dto.Email)}" +
             $"&order_name={Uri.EscapeDataString(dto.OrderName)}" +
             $"&callback_url={Uri.EscapeDataString(callbackUrl)}" +
-            $"&api_key={Uri.EscapeDataString(_apiKey)}";
+            $"&api_key={Uri.EscapeDataString(apiKey)}";
         
-        _logger.LogInformation($"[CREATE INVOICE] Plisio API URL: {url.Replace(_apiKey, "***")}");
+        _logger.LogInformation($"[CREATE INVOICE] Plisio API URL: {url.Replace(apiKey, "***")}");
         var resp = await _http.GetAsync(url);
         var body = await resp.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(body);
@@ -76,11 +77,12 @@ public class PlisioManager : IPlisioService
     
     public async Task<PlisioInvoiceDetails?> GetInvoiceDetailsAsync(string? txnId)
     {
+        string apiKey = "8cTh9ysB5sGvUd6UfX0heH2VGRNpmKrsScW_L54Qk8T5xrlhvBKuGyI4cmacMu6q";
         if (string.IsNullOrEmpty(txnId)) return null;
         try
         {
             // Use /invoices endpoint to get full details including wallet_hash
-            var url = $"https://api.plisio.net/api/v1/invoices/{txnId}?api_key={Uri.EscapeDataString(_apiKey)}";
+            var url = $"https://api.plisio.net/api/v1/invoices/{txnId}?api_key={Uri.EscapeDataString(apiKey)}";
             var resp = await _http.GetAsync(url);
             var body = await resp.Content.ReadAsStringAsync();
             
@@ -164,12 +166,14 @@ public class PlisioManager : IPlisioService
                 _logger.LogWarning("Cannot generate QR code: Wallet address is null or empty");
             }
             
-            // Transaction IDs from tx array
-            if (invoice.TryGetProperty("tx", out var txArray) && txArray.ValueKind == JsonValueKind.Array)
+            // tx array
+            if (invoice.TryGetProperty("tx", out var txArray)
+                && txArray.ValueKind == JsonValueKind.Array)
             {
                 foreach (var tx in txArray.EnumerateArray())
                 {
-                    if (tx.TryGetProperty("txid", out var txId))
+                    if (tx.TryGetProperty("txid", out var txId)
+                        && txId.ValueKind == JsonValueKind.String)
                     {
                         var txIdStr = txId.GetString();
                         if (!string.IsNullOrEmpty(txIdStr))
@@ -179,16 +183,19 @@ public class PlisioManager : IPlisioService
                     }
                 }
             }
-            
-            // Also check tx_id field
-            if (invoice.TryGetProperty("tx_id", out var singleTxId))
+
+            // single tx_id
+            if (invoice.TryGetProperty("tx_id", out var singleTxId)
+                && singleTxId.ValueKind == JsonValueKind.String)
             {
                 var txIdStr = singleTxId.GetString();
-                if (!string.IsNullOrEmpty(txIdStr) && !details.TxIds.Contains(txIdStr))
+                if (!string.IsNullOrEmpty(txIdStr)
+                    && !details.TxIds.Contains(txIdStr))
                 {
                     details.TxIds.Add(txIdStr);
                 }
             }
+
             
             return details;
         }
@@ -218,6 +225,6 @@ public class PlisioInvoiceResult
 
 public class PlisioOptions
 {
-    public string ApiKey { get; set; } = "";
+    public string ApiKey { get; set; } = "8cTh9ysB5sGvUd6UfX0heH2VGRNpmKrsScW_L54Qk8T5xrlhvBKuGyI4cmacMu6q";
     public string BaseUrl { get; set; } = "https://api.plisio.net";
 }

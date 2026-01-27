@@ -62,12 +62,12 @@
             <h1>Crypto Payment</h1>
             <div class="order-info">Order: @Model.OrderNumber</div>
         </div>
-        <div class="amount-section">
+        <div id="amountSection" class="amount-section">
             <div class="fiat-amount">@Model.SourceAmount.ToString("N2") @Model.SourceCurrency</div>
             <div class="crypto-amount">≈ @Model.CryptoAmount @Model.CryptoCurrency.Replace("_", " ")</div>
             <div class="network-badge">@Model.Network</div>
         </div>
-        <div class="qr-section">
+        <div id="qrSection" class="qr-section">
             <div class="qr-code">
                 @if (!string.IsNullOrEmpty(Model.QrCodeUrl))
                 {
@@ -99,13 +99,7 @@
             <div class="timer-label"><span class="spinner"></span> Time remaining for payment</div>
             <div class="timer-value" id="countdown">--:--:--</div>
         </div>
-        <div class="status-section">
-            <div class="status-badge @GetStatusClass()" id="statusBadge">
-                @Html.Raw(GetStatusIcon())
-                <span id="statusText">@GetStatusText()</span>
-            </div>
-        </div>
-        @if (Model.TxIds != null && Model.TxIds.Any())
+        @if (Model.TxIds != null && Model.TxIds.Count > 0)
         {
             <div class="tx-section" id="txSection">
                 <div class="tx-title">
@@ -132,7 +126,7 @@
                 <div class="tx-list" id="txList"></div>
             </div>
         }
-        <div class="warning-section">
+        <div id="warningSection" class="warning-section">
             <div class="warning-text">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
                 <span>After payment, wait until you are redirected to the order confirmation page.</span>
@@ -145,7 +139,8 @@
         const expireTime = @Html.Raw(Model.ExpireTime.HasValue ? $"new Date('{Model.ExpireTime.Value:yyyy-MM-ddTHH:mm:ssZ}')" : "null");
         const currentStatus = '@Model.Status';
         const invoiceId = @Model.InvoiceId;
-        let confettiTriggered = false;
+        
+        
         function updateCountdown() {
             if (!expireTime) { document.getElementById('countdown').textContent = '--:--:--'; return; }
             const now = new Date();
@@ -156,23 +151,14 @@
             const seconds = Math.floor((diff % (1000 * 60)) / 1000);
             document.getElementById('countdown').textContent = hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
         }
+        
+        // adres kopyalama ve toast çıkarma
         function copyToClipboard(elementId, message) { const text = document.getElementById(elementId).textContent.trim(); copyText(text, message); }
         function copyText(text, message) { navigator.clipboard.writeText(text).then(() => { showToast(message); }); }
         function showToast(message) { const toast = document.getElementById('toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2000); }
-        function triggerConfetti() {
-            if (confettiTriggered) return;
-            confettiTriggered = true;
-            const duration = 3000;
-            const end = Date.now() + duration;
-            (function frame() {
-                confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#667eea', '#764ba2', '#2e7d32', '#ffd700'] });
-                confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#667eea', '#764ba2', '#2e7d32', '#ffd700'] });
-                if (Date.now() < end) { requestAnimationFrame(frame); }
-            }());
-        }
-        updateCountdown();
-        setInterval(updateCountdown, 1000);
-        if (currentStatus === 'completed' || currentStatus === 'confirmed') { setTimeout(triggerConfetti, 500); }
+        
+         updateCountdown();
+         setInterval(updateCountdown, 1000);
         
         // Ödeme durumunu kontrol et (polling) - Her 3 saniyede bir
         let statusCheckCount = 0;
@@ -192,18 +178,7 @@
                     // Durum değiştiyse sayfayı güncelle
                     if (newStatus !== currentStatus) {
                         console.log(`[STATUS CHANGED] ${currentStatus} → ${newStatus}`);
-                        if (newStatus === 'completed' || newStatus === 'confirmed') {
-                            // Başarılı ödeme
-                            document.getElementById('statusBadge').className = 'status-badge status-completed';
-                            document.getElementById('statusBadge').innerHTML = '<svg class="status-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><span>Payment Confirmed!</span>';
-                            triggerConfetti();
-                            showSuccessAlert();
-                        } else if (newStatus === 'expired' || newStatus === 'cancelled') {
-                            // Başarısız ödeme
-                            document.getElementById('statusBadge').className = 'status-badge status-expired';
-                            document.getElementById('statusBadge').innerHTML = '<svg class="status-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg><span>' + (newStatus === 'expired' ? 'Payment Expired' : 'Payment Cancelled') + '</span>';
-                            showErrorAlert(newStatus === 'expired' ? 'Ödeme süresi doldu!' : 'Ödeme iptal edildi!');
-                        }
+                        window.location.href = `/result-invoice/${invoiceId}`;
                     }
                 }
             } catch (error) {
@@ -211,23 +186,9 @@
             }
         }
         
-        function showSuccessAlert() {
-            if (confirm('✅ ÖDEME BAŞARILI!\n\nÖdemeniz başarıyla tamamlandı.\n\nTamam\'a basarak devam edin.')) {
-                window.location.href = '/invoices';
-            }
-        }
-        
-        function showErrorAlert(message) {
-            alert('❌ ÖDEME BAŞARISIZ!\n\n' + message + '\n\nLütfen tekrar deneyin.');
-        }
-        
         // Sayfa yüklendiğinde durumu kontrol et
-        if (currentStatus === 'completed' || currentStatus === 'confirmed') {
-            // Zaten tamamlanmış
-            showSuccessAlert();
-        } else if (currentStatus === 'expired' || currentStatus === 'cancelled') {
-            // Zaten iptal/süresi dolmuş
-            showErrorAlert(currentStatus === 'expired' ? 'Ödeme süresi doldu!' : 'Ödeme iptal edildi!');
+        if (currentStatus !== 'new') {
+            window.location.href = `/result-invoice/${invoiceId}`;
         } else {
             // Pending durumundaysa polling yap
             console.log('[POLLING] Starting status polling every 3 seconds...');
@@ -235,10 +196,5 @@
             checkPaymentStatus(); // Hemen bir kez çağır
         }
     </script>
-    @functions {
-        string GetStatusClass() { return Model.Status?.ToLower() switch { "completed" or "confirmed" => "status-completed", "expired" or "cancelled" => "status-expired", _ => "status-pending" }; }
-        string GetStatusText() { return Model.Status?.ToLower() switch { "completed" or "confirmed" => "Payment Confirmed!", "expired" => "Payment Expired", "cancelled" => "Payment Cancelled", _ => "Waiting for payment..." }; }
-        string GetStatusIcon() { return Model.Status?.ToLower() switch { "completed" or "confirmed" => "<svg class=\"status-icon\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z\"/></svg>", "expired" or "cancelled" => "<svg class=\"status-icon\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z\"/></svg>", _ => "<span class=\"spinner\"></span>" }; }
-    }
 </body>
 </html>

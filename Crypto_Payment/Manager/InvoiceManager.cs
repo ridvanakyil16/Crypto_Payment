@@ -99,7 +99,7 @@ public class InvoiceManager : IInvoiceService
             CustomerId = dto.CustomerId,
             InvoiceUrl = plisio.InvoiceUrl,
             TxnId = plisio.TxnId,
-            Status = "pending"
+            Status = "new"
         };
         
         _db.Invoices.Add(invoice);

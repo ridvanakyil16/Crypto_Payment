@@ -20,10 +20,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="wwwroot\admin\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <Content Include="wwwroot\admin\velzon-admin\.DS_Store" />
     </ItemGroup>
 

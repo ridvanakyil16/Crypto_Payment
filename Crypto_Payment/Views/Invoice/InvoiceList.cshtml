@@ -285,6 +285,9 @@
                     case 'completed':
                         statusBadge = '<span class="badge bg-success-subtle text-success text-uppercase">Ödendi</span>';
                         break;
+                    case 'mismatch':
+                        statusBadge = '<span class="badge bg-success-subtle text-success text-uppercase">Fazla Ödendi</span>';
+                        break;
                     case 'pending':
                         statusBadge = '<span class="badge bg-warning-subtle text-warning text-uppercase">Bekliyor</span>';
                         break;
@@ -293,6 +296,9 @@
                         break;
                     case 'cancelled':
                         statusBadge = '<span class="badge bg-secondary-subtle text-secondary text-uppercase">İptal</span>';
+                        break;
+                    case 'new':
+                        statusBadge = '<span class="badge  bg-info-subtle text-info text-uppercase">Yeni</span>';
                         break;
                     default:
                         statusBadge = '<span class="badge bg-info-subtle text-info text-uppercase">Bilinmiyor</span>';

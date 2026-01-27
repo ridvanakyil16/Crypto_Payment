@@ -110,12 +110,12 @@ public class InvoicesController : ControllerBase
     {
         return plisioStatus?.ToLower() switch
         {
+            "new" => "new",
             "completed" => "completed",
-            "confirmed" => "completed",
-            "mismatch" => "completed", // Tutar farklı ama ödeme yapılmış
+            "mismatch" => "mismatch", // Tutar farklı ama ödeme yapılmış
             "expired" => "expired",
-            "cancelled" => "expired",
-            "error" => "expired",
+            "cancelled" => "cancelled",
+            "error" => "error",
             _ => "pending"
         };
     }
